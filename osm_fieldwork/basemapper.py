@@ -21,11 +21,13 @@
 
 import argparse
 import concurrent.futures
+import json
 import logging
 import queue
 import re
 import sys
 import threading
+from io import BytesIO
 from pathlib import Path
 from typing import Union
 
@@ -283,7 +285,7 @@ class BaseMapper(object):
         Returns:
             (list): The bounding box coordinates
         """
-        if not boundary.lower().endswith((".json", ".geojson")):
+        if not (isinstance(boundary, BytesIO) and boundary.lower().endswith((".json", ".geojson"))):
             # Is BBOX string
             try:
                 if "," in boundary:
@@ -304,9 +306,16 @@ class BaseMapper(object):
                 log.error(msg)
                 raise ValueError(msg) from None
 
-        log.debug(f"Reading geojson file: {boundary}")
-        with open(boundary, "r") as f:
-            poly = geojson.load(f)
+        if isinstance(boundary, BytesIO):
+            log.debug(f"Reading byte file: {boundary}")
+            boundary_bytes = boundary.read()
+            boundary_geojson = boundary_bytes.decode("utf-8")
+            poly = json.loads(boundary_geojson)
+        else:
+            log.debug(f"Reading geojson file: {boundary}")
+            with open(boundary, "r") as f:
+                poly = geojson.load(f)
+
         if "features" in poly:
             geometry = shape(poly["features"][0]["geometry"])
         elif "geometry" in poly:
