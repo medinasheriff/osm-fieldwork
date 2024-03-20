@@ -21,15 +21,15 @@
 
 import argparse
 import concurrent.futures
+import json
 import logging
 import queue
 import re
 import sys
 import threading
+from io import BytesIO
 from pathlib import Path
 from typing import Union
-from io import BytesIO
-import json
 
 import geojson
 import mercantile
@@ -305,13 +305,13 @@ class BaseMapper(object):
                 msg = f"Failed to parse BBOX string: {boundary}"
                 log.error(msg)
                 raise ValueError(msg) from None
-        
+
         if isinstance(boundary, BytesIO):
-           log.debug(f"Reading byte file: {boundary}")
-           boundary_bytes = boundary.read()
-           boundary_geojson = boundary_bytes.decode("utf-8")
-           poly = json.loads(boundary_geojson)
-        else: 
+            log.debug(f"Reading byte file: {boundary}")
+            boundary_bytes = boundary.read()
+            boundary_geojson = boundary_bytes.decode("utf-8")
+            poly = json.loads(boundary_geojson)
+        else:
             log.debug(f"Reading geojson file: {boundary}")
             with open(boundary, "r") as f:
                 poly = geojson.load(f)
